@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Transaction Confirmation</title>
+</head>
+<body>
+<p>Hello!</p>
+
+<p>The transaction with ID: <span th:text="${transactionId}">[Transaction ID]</span>
+    has been processed
+    <span th:text="${transactionSuccess ? 'successfully' : 'unsuccessfully'}">[successfully/unsuccessfully]</span>.
+</p>
+
+<div th:if="${transactionSuccess}">
+    <p>The amount of <span th:text="${amount}">[Amount]</span> has been
+        <span th:text="${sender ? 'taken from' : 'added to'}">[added to/taken from]</span>
+        your account.</p>
+    <p>Old balance: <span th:text="${oldBalance}">[Old Balance]</span></p>
+    <p>New balance: <span th:text="${newBalance}">[New Balance]</span></p>
+</div>
+
+<div th:if="${!transactionSuccess}">
+    <p>Unfortunately, the transaction could not be processed. Please try again later.</p>
+</div>
+
+<p>Regards,<br/>Your XYZ bank</p>
+</body>
+</html>

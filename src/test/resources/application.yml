@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: Leapwise
+  jpa:
+    properties:
+      hibernate:
+        order_inserts: true
+        jdbc:
+          batch_size: 10
+  datasource:
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: password
+    driverClassName: org.h2.Driver
+  mail:
+    username: XXXX@gmail.com
+    password: XXXX
+    host: smtp.gmail.com
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport.protocol: smtp
+
+
+service-properties:
+  account-turnover-update-cron: "0 0 0 1 * ?"
+  transaction-mail-template: "transaction-mail"
+  data-generation-properties:
+    import-data: false
+    customers-file: src/main/resources/data/customers.csv
+    accounts-file: src/main/resources/data/accounts.csv
+    transactions-file: src/main/resources/data/transactions.csv
+    number-of-customers: 100
+    number-of-accounts: 1000
+    number-of-transactions: 100000
+    thread-pool-size: 10
+    batch-size: 1000
+    data-separator: ","

@@ -1,146 +1,72 @@
-# Exercise
-​
-    Design a simplified banking system that manages customer accounts, transactions, and notifications towards users.
-​
----
-# Specification
-​
-## 1. Import file during startup
-    The file should contain transaction history for the last year and have 100k random records imported into the database during application startup.
-* ### Use-case
-    Generate file with 100k records of transaction to be imported into database
-​
-* ### Workflow
-    File should be parsed and mapped to database objects, then imported into database.
-    Consider using multithreaded approach.
-​
----
-## 2. Provide a REST API and a service for:
-    1) Checking customer details (including balance) for any given customerId.
-    2) Processing payments.
-    3) Viewing transaction history for any given customerId with optional filters.
-​
-* ## API Definitions:
-​
-* ### <u>2.1 Customer Endpoint </u>
-​
-    ```
-    /customer/{id}
-    ```
-​
-  * #### API Input:
-    customerId
-​
-  * #### API Response:
-    For each request to this API endpoint, return a response that includes the customer details.
-​
-  * #### Workflow:
-    When the API is called, your code should retrieve the customer account data from the database and return the customer object.
-​
-* ### <u>2.2 Transaction endpoint: </u>
-    ```
-    /transaction
-    ```
-​
-  * #### API Input:
-    This API endpoint takes a transaction object and processes the transaction.
-​
-  * #### API Output:
-    Returns the ID of the stored transaction.
-​
-  * #### Workflow:
-    When this API is called, create a new transaction in the database and return its ID.
-​
-* ### <u>2.3 Transaction history endpoint: </u>
-    ```
-    /customer/history/{id}
-    ```
-​
-  * #### API Input:
-    This API endpoint takes the customer ID and optionally filter name and value as input, for example:
-    * /transaction/history/{customerId}
-    * or
-    * /transaction/history/{customerId}?{filter_name}={filter_value}
-​
-  * #### API Output:
-    Returns the transaction history for the client.
-​
-  * #### Workflow:
-    When this API is called, search the database for customer transactions and return them as a list.
-​
----
-​
-## 3. Monthly transaction update job
-    There should be a configurable periodic job that calculates the turnover value based on income and expenditure for each account and updates all account entities
-    (e.g., 'pastMonthTurnover' in the customer table column). 
-​
-​
----
-## 4. Transaction confirmation
-After each transaction is processed, send an email to clients with a confirmation that includes the amount and transaction status.
-​
-- **Email content example:**
-​
+# Starting the application
 
-        Hello!
-    
-        The transaction with ID: {id} has been processed successfully/unsuccessfully,
-        and the balance: {balance} has been added/taken from your account.
-        
-        Old balance: {old balance}
-        New balance: {new balance}
-        
-        Regards,
-        Your XYZ bank
-​
----
-## Additional Information
-​
-You should use the following frameworks for your work.
-​
- * ### Spring JPA
-    H2 database running in memory (data will not be persistent across application restarts).
-​
-* ### 3rd party libraries
-    You are free to add/change any libraries that you might need to solve this exercise. The only requirement is that we do not have to set up/install any external software to run this application.
-​
-* ### Running the exercise with Maven
-    ```mvn spring-boot:run```
-​
-* ### Committing
-    Provide your solution by creating a feature branch using your name (e.g., feature/ivanhorvat) and push it to this repository.
-​
-* ### Class examples (not mandatory to use):
-    ```
-    Transaction 
-    {
-         transactionId;
-         senderAccountId;
-         receiverAccountId;
-         amount;
-         currencyId;
-         message;
-         timestamp;
-    }
-    ```
-    ```
-    Customer 
-    {
-        customerId;
-        name;
-        address;
-        email;
-        phoneNumber;
-        accounts;
-    }
-    ```
-    ```
-    Account 
-    {
-        accountId;
-        accountNumber;
-        accountType;
-        balance;
-        pastMonthTurnover;
-    }
-    ```
+```console
+mvn clean install
+mvn exec:java -Dexec.mainClass="com.project.leapwise.data_generation.DataGenerator"
+mvn spring-boot:run
+```
+
+Second command is to generate input data so you can run it only once.
+
+The application should be up and running now on http://localhost:8080/ and the swagger-ui should be available
+on http://localhost:8080/swagger-ui/index.html
+
+![swagger.png](swagger.png)
+
+# Decisions I made along the way
+
+## DB
+
+I mainly used what was in example. Just added TransactionStatus to transaction.
+![db-tables.png](db-tables.png)
+
+## Data import
+
+After some consideration and reading some posts i decided to multithread object mapping and saving to db but not file
+reading because i read that multithreaded file reading should be only done on highly specialized high throughput
+computers and not on home laptops becouse in most cases bottleneck is speed of I/O operations and not processor speed
+and multithreading can not do anything to help that.
+
+## Transaction history filtering
+
+I could have writen jpql named query with something like this
+
+```sql
+select transaction
+from Transaction transaction
+         join Account senderAccount on transaction.senderAccountId = senderAccount.accountId
+         join Account recipientAccount on transaction.recipientAccountId = recipientAccount.accountId
+where senderAccount.customerId = :customerId
+   or recipientAccount.customerId = :customerIdand
+    and COALESCE(:currencyId, transaction.currencyId) = transaction.currencyId
+    ... (all other filters)
+```
+
+But that would mean that on addition or change of property code would have to get added or changed in 3 or 4 places. So
+I decided to
+go with this option because it is easier to understand and maintain, but it can get changed in future if there are any
+memory or response time issues.
+
+![history.png](history.png)
+You can set filtering properties like this in swagger. Make sure either to delete sort from pageable or do something
+like this:
+
+```
+{
+  "page": 0,
+  "size": 10,
+  "sort": [
+    "amount,ASC"
+  ]
+}
+```
+
+## Mail sending
+
+I made mail sender work with my private email there are properties in application.yml
+
+    username: XXXX@gmail.com
+    password: XXXX 
+
+which you need to fill out first to make it work if you want I can send them to you through email. Btw it is not
+ordinary password it is [gmail app password](https://support.google.com/mail/answer/185833?hl=en).
